@@ -19,12 +19,20 @@ class ListOfFiles:
     def __init__(self, keyname):
         self.keyname = keyname
         self.files = []
+        self.lastmtime = 0
+        self.lastmtimecollect = 0
 
     def add(self, root, name, sortcriteria):
+        fname = os.path.join(root, name)
+        mtime = os.path.getmtime(fname)
         if not re.match(".*" + tag4collection + ".*", name):
+            if self.lastmtime < mtime : self.lastmtime = mtime
             self.files.append({"c": sortcriteria,
-                               "f": os.path.join(root, name),
-                               "r": root})
+                               "f": fname,
+                               "r": root,
+                               "mtime": mtime})
+        else:
+            if self.lastmtimecollect < mtime : self.lastmtimecollect = mtime
 
     def sort(self):
         self.files.sort(key=lambda x: x["c"])
@@ -63,8 +71,11 @@ class ListOfFiles:
     def join2tif(self):
         print("№ " + self.keyname)
         if len(self.files) > 1 and self.keyname != "others":
-            for f in self.files:
-                self.join_f2tif(f["f"])
+            if self.lastmtimecollect < self.lastmtime:
+                for f in self.files:
+                   self.join_f2tif(f["f"])
+            else:
+                print("...no need to join files")
 
     def remove(self):
         print("№ " + self.keyname)
